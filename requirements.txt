@@ -1,0 +1,16 @@
+# Core UI
+streamlit>=1.32.0
+
+# Async support
+nest_asyncio>=1.5.8
+
+# LlamaIndex and Groq integration
+groq
+llama-index>=0.10.35
+llama-index-llms-groq>=0.1.5
+llama-index-tools-duckduckgo>=0.1.2
+llama-index-tools-wikipedia>=0.1.4
+
+# Optional - for file management and utilities
+pandas>=2.2.2
+numpy>=1.26.4

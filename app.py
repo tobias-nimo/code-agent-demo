@@ -5,6 +5,7 @@ import nest_asyncio
 nest_asyncio.apply()
 
 from llama_index.core.workflow import Context
+from demo_agent import DemoAgent
 
 import streamlit as st
 import tempfile
@@ -12,8 +13,6 @@ import asyncio
 import time
 import json
 import os
-
-from demo_agent import DemoAgent
 
 st.set_page_config(page_title="Demo Time", layout="wide")
 st.title("Hello 👋")
@@ -105,7 +104,7 @@ with st.sidebar:
         instructions = f"""
         The user has uploaded the following files:
         {file_list}"""
-        st.session_state.agent.update_system(instructions)
+        st.session_state.agent.give_instructions(instructions)
 
     # Action buttons below chat input
     with st.container():

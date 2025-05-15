@@ -1,0 +1,2 @@
+Cutting Knowledge Date: December 2023
+Today Date: {datetime.datetime.today().strftime("%d %B %Y")}

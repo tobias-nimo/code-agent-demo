@@ -3,11 +3,12 @@
 from llama_index.core.agent.workflow import ToolCallResult, AgentStream
 from llama_index.core.workflow import Context
 
-from multimodal import stt
 from demo_agent import DemoAgent
+from multimodal import stt
 
 from streamlit_mic_recorder import mic_recorder
 import streamlit as st
+
 import tempfile
 import asyncio
 import time
@@ -34,7 +35,7 @@ section[data-testid="stSidebar"] {
   text-align: center;
   font-size: 2.5em;
   font-weight: bold;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
 }
 /* Fix chat container to properly display messages in correct order */
 [data-testid="stChatMessageContent"] {
@@ -97,7 +98,7 @@ with st.sidebar:
     # Action buttons below chat input
     with st.container():
         st.divider()
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3 = st.columns(3)
 
         with col1:
             if st.button("🌐", help="Web-search mode", use_container_width=True):
@@ -106,23 +107,6 @@ with st.sidebar:
         with col2:
             if st.button("💡", help="Reasoning mode", use_container_width=True):
                 st.warning("WIP")
-
-        with col3:
-            if st.button("🔍", help="Vision mode", use_container_width=True):
-                st.warning("WIP")
-
-        with col4:
-            if st.session_state.get("messages"):
-                if st.button("🗑️", help="Restart chat", use_container_width=True):
-                    # Generate a new unique key for the voice recorder widget and store it temporarily 
-                    st.session_state.voice_input_key += 1
-                    value_to_keep = st.session_state.get("voice_input_key") 
-
-                    # Clear everything in state memory, but restore important keys
-                    st.session_state.clear()
-                    if value_to_keep is not None: st.session_state["voice_input_key"] = value_to_keep
-
-                    st.rerun()
 
 # Display chat messages from session state in the chat container
 with chat_container:
@@ -145,7 +129,7 @@ with chat_container:
 
 # Put the input elements at the bottom
 with input_container:
-    col1, col2 = st.columns([93, 7])
+    col1, col2, col3 = st.columns([86, 7, 7])
     with col1:
         # Chat bar
         query = st.chat_input("Ask me anything...")
@@ -156,9 +140,21 @@ with input_container:
             start_prompt="🗣️",
             stop_prompt="⏹️",
             just_once=True,
-            use_container_width=False,
+            use_container_width=True,
             key=f"voice_input_{st.session_state.voice_input_key}"
         )
+    with col3:
+        if st.session_state.get("messages"):
+            if st.button("🗑️", help="Restart chat", use_container_width=True):
+                # Generate a new unique key for the voice recorder widget and store it temporarily 
+                st.session_state.voice_input_key += 1
+                value_to_keep = st.session_state.get("voice_input_key") 
+
+                # Clear everything in state memory, but restore important keys
+                st.session_state.clear()
+                if value_to_keep is not None: st.session_state["voice_input_key"] = value_to_keep
+
+                st.rerun()
 
 # Process audio input if present
 if audio_data:

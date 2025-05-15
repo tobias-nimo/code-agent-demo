@@ -1,7 +1,9 @@
-# demo_agents.py
+# demo_agent.py
 
 from llama_index.core.agent.workflow import CodeActAgent
 from llama_index.llms.groq import Groq as LlamaGroq
+
+from base_tools import transcribe_audio, analyze_image
 from code_executor import SimpleCodeExecutor
 
 import matplotlib.pyplot as plt
@@ -11,24 +13,31 @@ import datetime
 import re
 
 from dotenv import load_dotenv
+from pathlib import Path
 import os
 
 load_dotenv()
-ROOT_MODEL = os.getenv("ROOT_MODEL")
+SYSTEM_PROMPT_KEY = os.getenv("SYSTEM_PROMPT_KEY")
 API_KEY = os.getenv("API_KEY")
+LLM = os.getenv("LLM")
 
+# LLM
 llm = LlamaGroq(
-    model=ROOT_MODEL,
     api_key=API_KEY,
+    model=LLM,
+    presence_penalty=0.5,
     temperature=0.25,
     top_p=0.9,
-    min_p=0,
     top_k=20,
-    presence_penalty=0.5
+    min_p=0,
     )
-  
+
+# Code executor
 code_executor = SimpleCodeExecutor(
-    locals={},
+    locals={
+    "transcribe_audio": transcribe_audio,
+    "analyze_image": analyze_image
+    },
     globals={
     "__builtins__": __builtins__,
     "datetime": __import__("datetime"),
@@ -39,18 +48,23 @@ code_executor = SimpleCodeExecutor(
     },
     )
 
+# System prompt
+current_dir = Path(__file__).parent
+file_path = current_dir.parent / "prompts" / (SYSTEM_PROMPT_KEY+".txt")
+
+with open(file_path, "r") as file: content = file.read()
+system_prompt = eval(f"f'''{content}'''")
+
+## Agent Workflow ##
 class DemoAgent():
     def __init__(self):
         self._agent = CodeActAgent(
             llm=llm,
-            code_execute_fn=code_executor.execute
-            #fn=...
+            code_execute_fn=code_executor.execute,
+            tools=[transcribe_audio, analyze_image]
             )
 
-        # Default system prompt (for llama models)
-        self.system_prompt = f"""
-        Cutting Knowledge Date: December 2023
-        Today Date: {datetime.datetime.today().strftime("%d %B %Y")}"""
+        self.system_prompt = system_prompt
 
         self.additional_instructions = ""
 

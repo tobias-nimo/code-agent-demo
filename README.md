@@ -2,6 +2,7 @@
 This repository presents a multimodal, interactive AI assistant powered by a `CodeActAgent` class from [LlamaIndex](https://github.com/jerryjliu/llama_index) and [GroqCloud](https://console.groq.com/home) LLMs. It allows users to interact with an agent capable of executing Python code, handling file uploads, and transcribing voice input.
 
 The UI is built with [Streamlit](https://streamlit.io/), enabling seamless interaction with the agent:
+
 ![UI](images/preview.png)
 
 ## Features
@@ -40,8 +41,8 @@ pip install -r requirements.txt
 4. Create a `.env` file with the following contents:
 ```env
 API_KEY=your_groq_api_key
-ROOT_MODEL=llama3-8b-8192
-STT_MODEL=whisper-large
+ROOT_MODEL=your_groq_llm_of_choice
+STT_MODEL=your_groq_stt_of_choice
 ```
 
 ### Running the Application
@@ -55,9 +56,9 @@ This will launch the web interface in your default browser, allowing you to inte
 ```text
 src/
 ├── app.py              # Main Streamlit app
-├── demo_agent.py       # CodeActAgent integration with Groq and LlamaIndex
+├── demo_agent.py       # CodeActAgent integration with GroqCloud and LlamaIndex
 ├── code_executor.py    # Stateful code execution logic
-├── multimodal.py       # Voice-to-text transcription via Groq Whisper
+├── multimodal.py       # Voice-to-text transcription via GroqCloud Whisper
 ```
 
 ## Usage

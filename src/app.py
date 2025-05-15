@@ -1,10 +1,9 @@
 # app.py
 
-import asyncio
-import nest_asyncio
-nest_asyncio.apply()
-
+from llama_index.core.agent.workflow import ToolCallResult, AgentStream
 from llama_index.core.workflow import Context
+
+from multimodal import stt
 from demo_agent import DemoAgent
 
 from streamlit_mic_recorder import mic_recorder
@@ -14,6 +13,13 @@ import asyncio
 import time
 import json
 import os
+import io
+
+# Set page title and favicon
+st.set_page_config(
+    page_title="Demo Time",
+    page_icon="✨"
+)
 
 # Make it look pretty :)
 css = """
@@ -34,10 +40,6 @@ section[data-testid="stSidebar"] {
 [data-testid="stChatMessageContent"] {
   width: 100%;
 }
-/* Auto-scroll to bottom script */
-div[data-testid="stVerticalBlock"] {
-  max-height: none !important;
-}
 </style>
 
 <div class="centered-title">Hello there... 👋</div>
@@ -57,6 +59,9 @@ if "memory" not in st.session_state:
 
 if "processing_query" not in st.session_state:
     st.session_state.processing_query = False
+
+if "voice_input_key" not in st.session_state:
+    st.session_state.voice_input_key = 0
 
 context = Context(st.session_state.agent._agent)
 
@@ -108,17 +113,23 @@ with st.sidebar:
 
         with col4:
             if st.session_state.get("messages"):
-                if st.button("❌", help="Restart chat", use_container_width=True):
+                if st.button("🗑️", help="Restart chat", use_container_width=True):
+                    # Generate a new unique key for the voice recorder widget and store it temporarily 
+                    st.session_state.voice_input_key += 1
+                    value_to_keep = st.session_state.get("voice_input_key") 
+
+                    # Clear everything in state memory, but restore important keys
                     st.session_state.clear()
+                    if value_to_keep is not None: st.session_state["voice_input_key"] = value_to_keep
+
                     st.rerun()
 
-# Display chat messages in the chat container
+# Display chat messages from session state in the chat container
 with chat_container:
-    # Display messages from session state
     for msg in st.session_state.get("messages", []):
         with st.chat_message(msg["role"]):
+            # Multi-chunk assistant message
             if isinstance(msg["content"], list):
-                # Multi-chunk assistant message
                 for chunk in msg["content"]:
                     if chunk["type"] == "text":
                         st.markdown(chunk["content"])
@@ -128,8 +139,8 @@ with chat_container:
                     elif chunk["type"] == "tool":
                         with st.expander("⚙️ Output", expanded=False):
                             st.code(chunk["content"], language="raw")
+            # Regular user message
             else:
-                # Regular message
                 st.markdown(msg["content"])
 
 # Put the input elements at the bottom
@@ -143,16 +154,18 @@ with input_container:
         # Audio recorder
         audio_data = mic_recorder(
             start_prompt="🗣️",
-            stop_prompt="🟥",
+            stop_prompt="⏹️",
             just_once=True,
             use_container_width=False,
-            key="voice_input"
+            key=f"voice_input_{st.session_state.voice_input_key}"
         )
 
 # Process audio input if present
 if audio_data:
-    pass
-    # TODO: use whisper to process audio_data
+    audio_bytes = audio_data["bytes"]
+    audio_file = io.BytesIO(audio_bytes)
+    audio_file.name = "input.wav"
+    query = stt(audio_file)
 
 # Process text input if present
 if query and not st.session_state.processing_query:    
@@ -168,9 +181,51 @@ if query and not st.session_state.processing_query:
             workflow=st.session_state.agent._agent,
             data=st.session_state.memory
         )
-    
-    # Get response
-    response_chunks = st.session_state.agent(query, context)
+        
+    async def run_inference(query, ctx):
+        response_chunks = []
+        current_text = ""
+        buffer = ""
+
+        inside_code = False
+
+        # Run inference
+        handler = st.session_state.agent(query, ctx)
+
+        async for event in handler.stream_events():
+            if isinstance(event, AgentStream):
+                buffer += event.delta
+
+                while "<execute>" in buffer and "</execute>" in buffer:
+                    before, rest = buffer.split("<execute>", 1)
+                    code, after = rest.split("</execute>", 1)
+
+                    current_text += before
+                    if current_text.strip():
+                        response_chunks.append({"type": "text", "content": current_text.strip()})
+                        current_text = ""
+
+                    response_chunks.append({"type": "code", "content": code.strip()})
+                    buffer = after
+
+            elif isinstance(event, ToolCallResult):
+                if buffer.strip():
+                    response_chunks.append({"type": "text", "content": buffer.strip()})
+                    buffer = ""
+
+                tool_result = str(event.tool_output).strip()
+                response_chunks.append({"type": "tool", "content": tool_result})
+
+        if buffer.strip():
+            response_chunks.append({"type": "text", "content": buffer.strip()})
+
+        _ = await handler
+        return response_chunks
+
+    # Run inference async loop
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    response_chunks = loop.run_until_complete(run_inference(query, ctx=context))
     
     # Add assistant response to state
     st.session_state.messages.append({

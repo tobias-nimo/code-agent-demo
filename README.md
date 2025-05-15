@@ -1,7 +1,7 @@
 # Code Agent Demo
 This repository presents a basic implementation of a `CodeActAgent` leveraging [LlamaIndex](https://github.com/jerryjliu/llama_index) and [Streamlit](https://streamlit.io/). The agent is designed to execute code snippets and provide outputs within an interactive web interface.
 
-![UI](images/ui-view.png)
+![UI](images/ui-preview.png)
 
 ## Features
 - **CodeActAgent**: Core agent responsible for processing and executing code inputs.

@@ -6,14 +6,14 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
-API_KEY = os.getenv("API_KEY")
+GROK_API_KEY = os.getenv("GROK_API_KEY")
 STT = os.getenv("STT")
 
 def stt(audio_file) -> str:
     """Converts speech from an audio file into text."""
 
 	# Initialize the Groq client
-    client = GroqClient(api_key=API_KEY)
+    client = GroqClient(api_key=GROK_API_KEY)
     
     # Create a transcription of the audio file
     transcription = client.audio.transcriptions.create(

@@ -1,20 +1,24 @@
 # app.py
 
-from llama_index.core.agent.workflow import ToolCallResult, AgentStream
-from llama_index.core.workflow import Context
-
-from demo_agent import DemoAgent
-from multimodal import stt
-
-from streamlit_mic_recorder import mic_recorder
-import streamlit as st
-
 import tempfile
 import asyncio
 import time
 import json
+import sys
 import os
 import io
+
+from llama_index.core.agent.workflow import ToolCallResult, AgentStream
+from llama_index.core.workflow import Context
+
+from streamlit_mic_recorder import mic_recorder
+import streamlit as st
+
+# Add the parent directory (project root) to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from src.demo_agent import DemoAgent
+from src.multimodal import stt
 
 # Set page title and favicon
 st.set_page_config(

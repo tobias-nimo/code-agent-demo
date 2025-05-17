@@ -10,7 +10,7 @@ import mimetypes
 import base64
 
 load_dotenv()
-API_KEY = os.getenv("API_KEY")
+GROK_API_KEY = os.getenv("GROK_API_KEY")
 STT = os.getenv("STT")
 VLM = os.getenv("VLM")
 
@@ -21,7 +21,7 @@ def transcribe_audio(path_to_audio: str) -> str:
     Args:
         path_to_audio (str): The path to the audio file to be transcribed.
     Returns:
-        json: The transcribed text content of the audio file in JSON.
+        str: The transcribed text content of the audio.
     """
     
     # Validate path
@@ -30,7 +30,7 @@ def transcribe_audio(path_to_audio: str) -> str:
         raise FileNotFoundError(f"No such audio file: {path}")
 
     # Initialize the Groq client
-    client = GroqClient(api_key=API_KEY) 
+    client = GroqClient(api_key=GROK_API_KEY) 
     
     # Open the audio file
     with open(path_to_audio, "rb") as audio_file:
@@ -38,11 +38,11 @@ def transcribe_audio(path_to_audio: str) -> str:
         transcription = client.audio.transcriptions.create(
             file=audio_file,
             model=STT,
-            response_format="json",
+            response_format="text",
             temperature=0.1
         )
 
-    return transcription
+    return transcription.strip()
 
 def analyze_image(path_to_image: str, question: str) -> str:
     """
@@ -73,7 +73,7 @@ def analyze_image(path_to_image: str, question: str) -> str:
     base64_image = encode_image(path_to_image)
 
     # Initialize the Groq client
-    client = GroqClient(api_key=API_KEY)
+    client = GroqClient(api_key=GROK_API_KEY)
     
     chat_completion = client.chat.completions.create(
         messages=[
